@@ -1,0 +1,2 @@
+Recurses through the given directory, for each movie file it finds (.avi, .mp4 for now), checks IMDB using IMDB::Film and gets the MPAA rating for it. 
+Yeah, most of the heavylifting is done in IMDB::Film, this is just a tiny script that uses it. 
