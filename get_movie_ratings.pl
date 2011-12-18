@@ -2,14 +2,15 @@ use IMDB::Film;
 use strict;
 use warnings;
 use Getopt::Long;
+use File::Find;
 
 my @problems;
+my $verbose = 1;
 main();
 
 sub main {
 
 my $reverse;
-my $verbose = 1;
 my @ratings = qw();
 
 my $result = GetOptions("verbose!" => \$verbose, 
@@ -22,35 +23,42 @@ if (not -d $root_dir) {
     die "Sorry, $root_dir doesn't look like a directory to me. Bailing out.";
 }
 
-look_into($root_dir, $verbose);
+find(\&process, $root_dir);
 
-print "By the way, we had problems fetching info for these: \n" if @problems;
+print "By the way, we had problems fetching info for these: \n" if (@problems && $verbose);
 for my $p (@problems) {
     print $p, "\n";
 }
+print "Number of problematic files: " . int(@problems);
 }
 
-
-sub look_into
-{
-my ($dir_path, $verbose) = shift;
-print "Okay, gonna look into $dir_path now..." if $verbose;
-
-opendir(my $dir, $dir_path) or die "Aw shucks, unable to open $dir_path. $!\n";
-
-while (my $f = readdir($dir)) {
-    if (-d $f && $f ne '..' && $f ne '.') {
-        my $movie_name = $1;
-        my $imdb_obj = new IMDB::Film(crit => $movie_name);
-        if ($imdb_obj->status()) {
-            print $imdb_obj->mpaa_info();
-        }
-        else {
-            push @problems, $f;
-        }
+sub process {
+my $f = $_;
+if (-f $f && ($f =~ /^(.*)\.avi$/ || $f =~ /(.*)\.mp4/) && $1 ne 'Sample') {
+    print "Next file: $f\n" if $verbose;
+    my $movie_name = $1;
+    #Remove unnecessary parts from the filename
+    for my $to_remove qw(aXXo DvDrip Eng DivX DvDScr) {
+        $movie_name =~ s/\b$to_remove\b//i;
     }
-    elsif (-f $f && ($f =~ /^(.*)\.avi$/ || $f =~ /(.*)\.mp4/)) {
-        look_into($f, $verbose);
+    #Remove empty brackets that might be left from the previous
+    for my $to_remove qw<() [] {} ||> {
+        $movie_name =~ s/\s*\Q$to_remove\E\s*/ /i;
+    }
+    #Change the year from .year to (year)
+    if ($movie_name =~ /(.*)\.(\d{4})$/) {
+        $movie_name = $1 . " (" . $2 . ")";
+    }
+    my $imdb_obj = new IMDB::Film(crit => $movie_name);
+    if ($imdb_obj->status()) {
+        print "RATING: ", $imdb_obj->mpaa_info(), "\n";
+    }
+    else {
+        push @problems, $f;
     }
 }
+elsif (-d $f && $f ne '..' && $f ne '.') {
+    print "Okay, gonna look into $f now..." if $verbose;
 }
+}
+
