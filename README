@@ -1,2 +1,4 @@
 Recurses through the given directory, for each movie file it finds (.avi, .mp4 for now), checks IMDB using IMDB::Film and gets the MPAA rating for it. 
 Yeah, most of the heavylifting is done in IMDB::Film, this is just a tiny script that uses it. 
+
+Tip: Edit the IMDB/BaseClass.pm file in your installation (http://stackoverflow.com/questions/341484/how-do-i-find-which-file-perl-loaded-when-i-use-a-module if you don't know the location) and comment out the line that prints "Calling URL: $url!\n". Otherwise the output gets cluttered and annoying. 
